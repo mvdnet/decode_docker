@@ -1,8 +1,8 @@
 # Decode Docker deployment 
 
-* Nginx reverse proxy
+* Nginx for static serve or and proxy ( TODO )
 * Flask in Bjoern container - from repo: sguldemond/decode_fieldlab
-* Vue JS served from Nginx - TODO
+* Vue JS served from Nginx? - TODO
 
 ## settings
 
