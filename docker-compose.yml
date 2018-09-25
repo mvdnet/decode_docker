@@ -1,0 +1,28 @@
+version: '2'
+
+# Decode TMP stack
+# Nginx used only for serving static files
+# Bjoern WSGI server to server python flask
+
+services:
+  
+  nginx_static:
+    restart: always
+    container_name: decode_static
+    image: nginx
+    ports:
+      - "5000:80"
+    volumes:
+     - ./nginx.conf:/etc/nginx/conf.d/nginx.conf:ro 
+     - ./logs:/var/log/nginx
+     - ./html:/html
+    
+  decode_api:
+    restart: always
+    container_name: decode_api
+    build: ./dockerfiles/bjoern_flask_docker
+    # environment:
+    ports:
+       - "5005:9808"
+    volumes:
+       - ./decode_fieldlab/server:/app
