@@ -15,7 +15,8 @@ services:
     volumes:
      - ./nginx.conf:/etc/nginx/conf.d/nginx.conf:ro 
      - ./logs:/var/log/nginx
-     - ./html:/html
+     #- ./html_test:/html
+     - ./decode/dist:/html
     
   decode_api:
     restart: always
