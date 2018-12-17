@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="nl">
+
+<head>
+<meta http-equiv="Content-type" content="text/html; charset=utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="keywords" content="">
+<meta name="description" content="">
+
+<title>iframe wrap test</title>
+</head>
+<body>
+	<div id="admin">Wrapper</div>
+	<div id="container" style="border: 1px solid black; display: block; height: 800px; width:100%"><!-- here is the webpage --></div>
+
+	<script>
+
+		//// SETTINGS ////
+
+		let PROXY_URL = "http://proxytest.oscity.nl/";
+		let WRAPPED_URL = "oscity.nl";
+		//WRAPPED_URL = "google.com"
+		WRAPPED_URL = "https://services.nijmegen.nl/irma/issue";
+		//WRAPPED_URL = "https://digid.nl/inloggen";
+
+		let IRMA_HTML = `
+    <body onload="document.forms[0].submit()">
+        <form action="https://digid.nl/saml/idp/request_authentication"  method="post">
+            <div>
+                <input type="hidden" name="RelayState"
+                    value="L2lybWEvaXNzdWU="/>
+                <input type="hidden" name="SAMLRequest"
+                    value="PHNhbWxwOkF1dGhuUmVxdWVzdCBBc3NlcnRpb25Db25zdW1lclNlcnZpY2VVUkw9Imh0dHBzOi8v
+c2VydmljZXMubmlqbWVnZW4ubmwvaXJtYS9pc3N1ZSIgRGVzdGluYXRpb249Imh0dHBzOi8vZGln
+aWQubmwvc2FtbC9pZHAvcmVxdWVzdF9hdXRoZW50aWNhdGlvbiIgRm9yY2VBdXRobj0iVHJ1ZSIg
+SUQ9IkF1dGhuUmVxdWVzdC0xLTRlMjdiYWVhYjc3N2IyZDQwNWVkOGE2YjRmYTgzYzU5IiBJc3N1
+ZUluc3RhbnQ9IjIwMTgtMDktMjhUMTY6NTA6NTguODg4WiIgUHJvdmlkZXJOYW1lPSJHZW1lZW50
+ZSBOaWptZWdlbiIgVmVyc2lvbj0iMi4wIiB4bWxuczplYz0iaHR0cDovL3d3dy53My5vcmcvMjAw
+MS8xMC94bWwtZXhjLWMxNG4jIiB4bWxuczpzYW1sPSJ1cm46b2FzaXM6bmFtZXM6dGM6U0FNTDoy
+LjA6YXNzZXJ0aW9uIiB4bWxuczpzYW1scD0idXJuOm9hc2lzOm5hbWVzOnRjOlNBTUw6Mi4wOnBy
+b3RvY29sIj48c2FtbDpJc3N1ZXI+aHR0cHM6Ly9zZXJ2aWNlcy5uaWptZWdlbi5ubC9kaWdpZC9N
+ZXRhZGF0YVNQPC9zYW1sOklzc3Vlcj48ZHM6U2lnbmF0dXJlIHhtbG5zOmRzPSJodHRwOi8vd3d3
+LnczLm9yZy8yMDAwLzA5L3htbGRzaWcjIj48ZHM6U2lnbmVkSW5mbz48ZHM6Q2Fub25pY2FsaXph
+dGlvbk1ldGhvZCBBbGdvcml0aG09Imh0dHA6Ly93d3cudzMub3JnLzIwMDEvMTAveG1sLWV4Yy1j
+MTRuIyIvPjxkczpTaWduYXR1cmVNZXRob2QgQWxnb3JpdGhtPSJodHRwOi8vd3d3LnczLm9yZy8y
+MDAxLzA0L3htbGRzaWctbW9yZSNyc2Etc2hhMjU2Ii8+PGRzOlJlZmVyZW5jZSBVUkk9IiNBdXRo
+blJlcXVlc3QtMS00ZTI3YmFlYWI3NzdiMmQ0MDVlZDhhNmI0ZmE4M2M1OSI+PGRzOlRyYW5zZm9y
+bXM+PGRzOlRyYW5zZm9ybSBBbGdvcml0aG09Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvMDkveG1s
+ZHNpZyNlbnZlbG9wZWQtc2lnbmF0dXJlIi8+PGRzOlRyYW5zZm9ybSBBbGdvcml0aG09Imh0dHA6
+Ly93d3cudzMub3JnLzIwMDEvMTAveG1sLWV4Yy1jMTRuIyIvPjwvZHM6VHJhbnNmb3Jtcz48ZHM6
+RGlnZXN0TWV0aG9kIEFsZ29yaXRobT0iaHR0cDovL3d3dy53My5vcmcvMjAwMS8wNC94bWxlbmMj
+c2hhMjU2Ii8+PGRzOkRpZ2VzdFZhbHVlPmpoSEcrUzRrYW51emxSaXFrRXdPY05uL0hXYXY0azlS
+Nm14dGJSY3JUM289PC9kczpEaWdlc3RWYWx1ZT48L2RzOlJlZmVyZW5jZT48L2RzOlNpZ25lZElu
+Zm8+PGRzOlNpZ25hdHVyZVZhbHVlPmN3STNjb1lKNy8xUi96QkdGcGhDMU1VaHBhNkwraXV4U3ZV
+aHA1SkJuUUpuV3NMUDBVa0Qwd1E4UkZGVXd6ZXJMNDUyWGtvamxsMnNEeVVYS2JyRS9QNDVkdE9S
+Z1Q4bHk3WTdRWGJEeEpBbGZFbnNWVXRnMXdPS0VSb0twMC9ESVVKa1FrL1BXT1h3aUlnZlFnTVpO
+ZFZPcjZwSkFuL3pVZWo5alRZb284ZDNSeWc4ZncxTm9vVDZIUEdwRGx6MmxCWkZTdXB0TVRSVklX
+aStsamY5QUh0TG5YWU52S0I3S2Z2RUZpRFVQSnpnY3VKdDhrdzhUSHBoUEQ4citOYmNVdXNnaVNj
+SEowMUpmQ3dnbUs0Mis5Z0ZtT0pCb3M4cTJmVEswZ3pZbk5sVzFKcGZEVENuYjdNYjNjNGJXdjNx
+K01pTUZ0NStBMGY5d2RGRkhaUlhtUT09PC9kczpTaWduYXR1cmVWYWx1ZT48ZHM6S2V5SW5mbz48
+ZHM6WDUwOURhdGE+PGRzOlg1MDlDZXJ0aWZpY2F0ZT5NSUlHdFRDQ0JKMmdBd0lCQWdJSVR2eTBT
+R1YrVTZJd0RRWUpLb1pJaHZjTkFRRUxCUUF3VGpFTE1Ba0dBMVVFQmhNQ1Rrd3hFVEFQQmdOVkJB
+b01DRXRRVGlCQ0xsWXVNU3d3S2dZRFZRUUREQ05MVUU0Z1VFdEpiM1psY21obGFXUWdUM0puWVc1
+cGMyRjBhV1VnUTBFZ0xTQkhNakFlRncweE5qQTRNVGd4TWpRd016aGFGdzB4T1RBNE1UZ3hNalF3
+TXpoYU1JR2dNUXN3Q1FZRFZRUUdFd0pPVERFVE1CRUdBMVVFQ0F3S1IyVnNaR1Z5YkdGdVpERVJN
+QThHQTFVRUJ3d0lUbWxxYldWblpXNHhHakFZQmdOVkJBb01FVWRsYldWbGJuUmxJRTVwYW0xbFoy
+VnVNUk13RVFZRFZRUUxEQXBKUTFRdFFtVm9aV1Z5TVIwd0d3WURWUVFGRXhRd01EQXdNREF3TVRB
+d01UUTNPVEUzT1RBd01ERVpNQmNHQTFVRUF3d1FaR0YwWVM1dWFXcHRaV2RsYmk1dWJEQ0NBU0l3
+RFFZSktvWklodmNOQVFFQkJRQURnZ0VQQURDQ0FRb0NnZ0VCQU1oV2lFclphV1Jnb1BJUGcrZlFy
+cEkwdWRoeGJqWlE4U29KdFlPUkpKbWp0NWRHL0FnVjRaMG5BQ1hzNUM5RHF1bXJRUVhqdmNlN0xP
+TThNRXZiWUphNi83SWowbVZtNi9nM3o1djA2dHlxaXN0dE5tM3V0Tm1pemd1YWhON0hZVzNseitH
+TGR6eDhsNXkxTXhUL1RKakhNTUZxVHYrZTFIYzFYbWJ3eDUyUVhsZ0xNU1RtY3J2S1lQb2U4Z3Z2
+NFFuTS9sYkpsaE5ZZ0tJaEcvdW90anErNHdNWjFoSENqaFVIbS9hWUJFZHA3aXhPTzJUb200bmF2
+Z2RkVWVHTTRTcEU4MnJYNTFiVE9MTDVSL1FmZWpOWThMalBuVmowYlZwUWlDZTk4SHo3VVF4K3Z5
+VlViZlZNVUJja2dzNFg0OWQ3MTIyZ1cvc3E4bHV0TXJ6TnpFVUNBd0VBQWFPQ0FrSXdnZ0krTUlH
+TEJnZ3JCZ0VGQlFjQkFRUi9NSDB3VVFZSUt3WUJCUVVITUFLR1JXaDBkSEJ6T2k4dlkyVnlkQzV0
+WVc1aFoyVmtjR3RwTG1OdmJTOURRV05sY25SekwwdFFUbEJMU1c5MlpYSm9aV2xrVDNKbllXNXBj
+MkYwYVdWRFFVY3lMbU5sY2pBb0JnZ3JCZ0VGQlFjd0FZWWNhSFIwY0RvdkwyY3liMk56Y0M1dFlX
+NWhaMlZrY0d0cExtTnZiVEFkQmdOVkhRNEVGZ1FVSk1rb0pQNTFjWE10SWlBRmNTRm1GVUtNbzFF
+d0RBWURWUjBUQVFIL0JBSXdBREFmQmdOVkhTTUVHREFXZ0JSMW8wNlBIcGZkYklnQk1lOXlJY0p1
+WUpSOWdEQ0JzUVlEVlIwZ0JJR3BNSUdtTUlHWkJncGdoQkFCaDJzQkFnVUdNSUdLTURjR0NDc0dB
+UVVGQndJQkZpdG9kSFJ3Y3pvdkwyTmxjblJwWm1sallXRjBMbXR3Ymk1amIyMHZjR3RwYjNabGNt
+aGxhV1F2WTNCek1FOEdDQ3NHQVFVRkJ3SUNNRU1NUVU5d0lHUnBkQ0JqWlhKMGFXWnBZMkZoZENC
+cGN5Qm9aWFFnUTFCVElGQkxTVzkyWlhKb1pXbGtJSFpoYmlCTFVFNGdkbUZ1SUhSdlpYQmhjM05w
+Ym1jdU1BZ0dCbWVCREFFQ0FqQldCZ05WSFI4RVR6Qk5NRXVnU2FCSGhrVm9kSFJ3T2k4dlkzSnNM
+bTFoYm1GblpXUndhMmt1WTI5dEwwdFFUbEJMU1c5MlpYSm9aV2xrVDNKbllXNXBjMkYwYVdWRFFV
+Y3lMMHhoZEdWemRFTlNUQzVqY213d0RnWURWUjBQQVFIL0JBUURBZ1dnTUNjR0ExVWRKUVFnTUI0
+R0NDc0dBUVVGQndNQkJnZ3JCZ0VGQlFjREFnWUlLd1lCQlFVSEF3UXdHd1lEVlIwUkJCUXdFb0lR
+WkdGMFlTNXVhV3B0WldkbGJpNXViREFOQmdrcWhraUc5dzBCQVFzRkFBT0NBZ0VBQWtMRzF1by9D
+cWlWR3JhSXovUVFSTlJTdFdMRjc0b2VzNm1rOUhTV0lpcXpoWUhvYkRLNHNvcG1QMURqVkt6VEFj
+bmdJL0s3UitVT2pSM3R5SERPcERhd3hUbklJeDk5amdWTGhoZ0duakI3ZmJtWnZXMmNWc0JKb2xy
+YTU4SDhHdjRHWlJFTk5JaUNITzl6OWZvNXp1L0QvMVpIelJ6YkhYN25GRlRVanQ2L3hUdmFLdzZV
+NWZtV2pNeHVRYlc0R1FKcHlLa2dsOUxiTG1adVZqN1FpYmVPaktXVUhPbTZGcnVoakdabkRUQ2hT
+V0phdmc4R3l5NG9YVDlWbld2L0xNdUg3eGZUcTNEZURNODdNWXh1VitOb21oa0lUaklZUXV6RUhu
+RXpZbkN5eitueHdyMExYdFhKVG1VTEFienZOK2hoTFAydGd1Q2xBRVNmb0M1UGxvS1YvZHR6SWJj
+RDdsaEZQTllJZjMzMXE1N0sxa2NxMTRnSENQeklIMzlqajBOb09ZUlJZcERMcEo0dlBqdUl3Umdn
+MjQxdFk2cThIcjJSRWxEcjZmcXBtTzBNRGNQSldibkFDYzRlU0YyeTVHTjkzdTBYSjRSSWlZNC8y
+YzR0Uk1vKytYaStISnQwdWFBV1pDNDVYTmw4UEpDZGdBT0ZtZnYwd0lhcHFzWjVVZVRoY3lJbTQ5
+eDJxYjVZUlVLbmtBN2FMKzdNNXE0ZklMdTRDNVNTVmwzSm4vY2JpVlJqRVJMRWkybDVXZGg0T1BH
+NE9OT08vbC9QajBLNnFrVmZSTjhhQTVPc1lVdlhuaFBVVXFjZnp6bEJvcEhXcjVvOFc2LzJnS1Rn
+dG9VdWw4aisyK0tHNFRZQk5rRGpHd05ab3JRcWcxdXBCQXpwOUtCMG94OWRMZzA9PC9kczpYNTA5
+Q2VydGlmaWNhdGU+PC9kczpYNTA5RGF0YT48L2RzOktleUluZm8+PC9kczpTaWduYXR1cmU+Cgk8
+c2FtbHA6UmVxdWVzdGVkQXV0aG5Db250ZXh0IENvbXBhcmlzb249Im1pbmltdW0iPgoJPHNhbWw6
+QXV0aG5Db250ZXh0Q2xhc3NSZWY+dXJuOm9hc2lzOm5hbWVzOnRjOlNBTUw6Mi4wOmFjOmNsYXNz
+ZXM6TW9iaWxlVHdvRmFjdG9yQ29udHJhY3Q8L3NhbWw6QXV0aG5Db250ZXh0Q2xhc3NSZWY+Cgk8
+L3NhbWxwOlJlcXVlc3RlZEF1dGhuQ29udGV4dD4KPC9zYW1scDpBdXRoblJlcXVlc3Q+"/>
+            </div>
+        </form>
+    </body>`;
+
+		let DIGID_HTML = `
+		
+		<body onunload=''>
+		<nav id='skiplink'>
+		<ul>
+		<li>
+		<a href='#main_content' tabindex='1' title='Direct naar de inhoud'>
+		Ga direct naar: inhoud
+		</a>
+		</li>
+		</ul>
+		</nav>
+		<div class='window'>
+		<div class='content'>
+		<header class='header'>
+		<a href="https://digid.nl/"><img alt="Logo Rijksoverheid - Ga naar www.digid.nl" class="rijksoverheid-logo" title="Logo Rijksoverheid - Ga naar www.digid.nl" src="/assets/RO_DigiD_Logo_Homepage-5efdea7b6d29f0e57db2e693e991a784d2f9b260a058b2d164e100351538784e.svg" /></a>
+		<nav class='header-navigation'>
+		DigiD
+
+
+		</nav>
+		<nav class='header-menu'>
+		</nav>
+		</header>
+		<div class='main'>
+		<img alt="Vignet DigiD" class="digid-logo" title="Vignet DigiD" src="/assets/digid_eo_rgb-55f1daa50e8a463ddb0718ad1781c22195c16d3bfee3535b1df04fed763f488a.svg" />
+		<section class='main-content' id='main_content' style='outline: none' tabindex='-1'>
+		<h1>Inloggen bij <strong>DigiD Gemeente Nijmegen</strong></h1>
+		<p data-finished='Uw sessie is verlopen. Begin opnieuw met inloggen of keer terug naar de homepage van DigiD (www.digid.nl).' data-minutes='15' data-progress='U heeft nog #countdown minuten om in te loggen. Daarna verloopt uw sessie.' id='session_countdown'>U heeft nog tot 16:30 uur (Nederlandse tijd) om in te loggen. Daarna verloopt uw sessie.</p>
+
+
+
+
+
+		<form class="remember_login" id="new_authentication" action="https://digid.nl/inloggen" accept-charset="UTF-8" method="post"><input name="utf8" type="hidden" value="&#x2713;" /><input type="hidden" name="authenticity_token" value="bzE+c/DSH4xzF73+cPjeOoK+eiMsWujAMZBtFw/QVKFjGzSGu4S/nnSgWXA3VSd8u9WQCtF9CVEFuhQC6Z5A3w==" /><div class="block-with-icon--information"><p>Deze dienst vereist dat u inlogt met een van de onderstaande methoden. Heeft u deze nog niet geactiveerd? De DigiD app kunt u direct in de app zelf activeren. Via <a href="https://mijn.digid.nl/">Mijn DigiD</a> kunt u de andere inlogmethoden aan uw account toevoegen.</p></div>
+		<header class="form__header"><div class="form__header__required-fields">Verplichte velden<span class="form__item__label__required">*</span></div></header>
+		<fieldset class="form__item"><label class="form__item__label" for="authentication_type_account">Inlogmethode<span class="form__item__label__required">*</span></label><input class="form__item__field--box" data-required="true" type="radio" value="midden" checked="checked" name="authentication[type_account]" id="authentication_type_account_midden" /><label class="form__item__box-label" for="authentication_type_account_midden">Ik wil inloggen met een controle via sms</label><input class="form__item__field--box" data-required="true" type="radio" value="app" checked="checked" name="authentication[type_account]" id="authentication_type_account_app" /><label class="form__item__box-label" for="authentication_type_account_app">Ik wil inloggen met de DigiD app</label></fieldset>
+
+		<div class='normal-login' id='normal-login'>
+		<fieldset class="form__item" id="username-field"><label class="form__item__label" for="authentication_digid_username">DigiD gebruikersnaam<span class="form__item__label__required">*</span></label><input autocapitalize="none" class="form__item__field" autocomplete="off" spellcheck="false" data-required="true" type="text" name="authentication[digid_username]" id="authentication_digid_username" /></fieldset>
+		<fieldset class="form__item capslock_notifier" id="password-field"><label class="form__item__label" for="authentication_wachtwoord">Wachtwoord<span class="form__item__label__required">*</span></label><input class="form__item__field" autocomplete="off" data-required="true" type="password" name="authentication[wachtwoord]" id="authentication_wachtwoord" /><span class="form__item__example">Caps Lock is ingeschakeld</span></fieldset>
+		<fieldset class="form__item remember_option"><input name="authentication[remember_login]" type="hidden" value="0" /><input class="form__item__field--box" type="checkbox" value="1" name="authentication[remember_login]" id="authentication_remember_login" /><label class="form__item__box-label" for="authentication_remember_login">Onthoud mijn DigiD gebruikersnaam</label></fieldset>
+		</div>
+		<div class="actions"><input type="submit" name="commit" value="Inloggen" class="actions__left--button" id="submit-button" data-disable-with="Inloggen" /><input type="submit" name="commit" value="Annuleren" class="actions__right--button" formnovalidate="formnovalidate" id="cancel-button" data-disable-with="Annuleren" /></div>
+		</form><ul class='list-with-arrows'>
+		<li id='forgot_password'><a href="https://digid.nl/herstellen">Wachtwoord vergeten?</a></li>
+		<li id='request-new-digid'><a href="https://digid.nl/aanvragen">Nog geen DigiD? Vraag uw DigiD aan</a></li>
+		</ul>
+
+
+		<footer class='footer-questions'>
+		<h1 class='h2'>Vraag en antwoord</h1>
+		<ul class='questions'>
+		<li class='questions-item'>
+		<a class='questions-question' href='#'>
+		<i class="icon-3941-delta-links-24px"style="font-size: 75%; color: #154273"aria-label="delta links icoon"></i>
+		Ik ben mijn gebruikersnaam vergeten
+		<div class='accessibility__information'>Dit antwoord is momenteel verborgen. Selecteer de vraag om het antwoord te openen.</div>
+		</a>
+		<div class='questions-answer'><p>Als u uw gebruikersnaam bent vergeten, dan moet u helaas opnieuw uw <a href="https://digid.nl/aanvragen">DigiD aanvragen</a>. </p>
+
+		<p>Om veiligheidsredenen verstrekt DigiD geen vergeten
+		gebruikersnamen.</p>
+		</div>
+		</li>
+		</ul>
+		<h1 class='h2'>Geen antwoord op uw vraag?</h1>
+		<p><i class="icon-3945-externe-link-24px"style="font-size: 80%; color: #154273"aria-label="externe link icoon"></i><a target="_blank" href="https://www.digid.nl/vraag-en-antwoord">Bekijk de overige veelgestelde vragen</a> [opent in een nieuw venster] of <i class="icon-3945-externe-link-24px"style="font-size: 80%; color: #154273"aria-label="externe link icoon"></i><a target="_blank" href="https://www.digid.nl/contact">neem contact op</a> [opent in een nieuw venster] met de DigiD helpdesk.</p>
+		</footer>
+
+		</section>
+		</div>
+		<footer class='footer'></footer>
+		<div class='pageid-footer'>
+		<div class='pageid-inner'>
+		<div class='pageid-left'></div>
+		<div class='pageid-center'></div>
+		<div class='pageid-right'>
+		<p class='page_id'>
+		Pagina ID: 
+		<span data-ids='[&quot;INA.20&quot;,&quot;INA.10.1&quot;,&quot;IN.20T&quot;,&quot;INA.20.4&quot;]' id='page-data-id'>INA.20</span>
+		</p>
+		</div>
+		</div>
+		</div>
+		</div>
+		<nav class='service-menu'>
+		<ul class='service-menu-items'>
+		<li><a class="service-menu-link" href="https://www.digid.nl/burger/vraag-en-antwoord">Veelgestelde vragen</a></li>
+		<li><a class="service-menu-link" href="https://www.digid.nl/">www.digid.nl</a></li>
+		</ul>
+		</nav>
+		</div>
+
+		</body>`;
+
+
+		console.log("==== INIT ====");
+		console.log("Try to wrap URL: " + WRAPPED_URL);
+
+		//// DOM REFS ////
+
+		let adminElem = document.querySelector("#admin");
+		let containerElem = document.querySelector("#container");
+		let iframeElem;
+
+		//// MAIN ////
+
+		setIframeExt();
+		//setIframeInt(DIGID_HTML);
+
+
+		//// FUNCTIONS ////
+
+		function setIframeExt()
+		{
+			// test url 
+			
+			iframeElem = document.createElement("iframe");
+			console.log(iframeElem);
+
+			let curUrl = PROXY_URL + WRAPPED_URL; 
+
+			console.log("Create IFRAME with URL: " + curUrl);
+				
+			// set url in iframe
+			iframeElem.src = curUrl;
+			// loaded 
+			iframeElem.onload = startInspection;
+
+			// scale iframe
+			iframeElem.style.width = containerElem.style.width;
+			iframeElem.style.height = containerElem.style.height;
+
+			// add to dom
+			containerElem.appendChild(iframeElem); // add to current dom
+
+			// set listener
+			window.addEventListener('message', function(event) { 
+				console.log(event);
+			}); 
+				
+			/* NOTES:
+				Via proxy to irma, posts to digid (directly) => Refused to display 'https://digid.nl/inloggen' in a frame because it set 'X-Frame-Options' to 'sameorigin'.
+
+			*/
+
+		}
+
+		// ----
+
+		function setIframeInt(html) 
+		{
+			iframeElem = document.createElement('iframe');
+			iframeElem.src = 'data:text/html;charset=utf-8,' + encodeURI(html);
+
+			// scale iframe
+			iframeElem.style.width = containerElem.style.width;
+			iframeElem.style.height = containerElem.style.height;
+
+			containerElem.appendChild(iframeElem);
+
+			iframeElem.onload = startInspection;
+			
+		}
+
+		// ----
+
+		function startInspection()
+		{
+			// stop submit
+			console.log("==== start inspection ====")
+
+			console.log(iframeElem.src);
+			
+			//let document = iframeElem.contentDocument || iframeElem.contentWindow.document;
+			//console.log(document);
+
+			iframeHtml = iframeElem.contentWindow.postMessage({ hallo : 'test ' }, '*'); 
+			
+			console.log(iframeHtml);
+
+			let parser = new DOMParser();
+			iframeDom = parser.parseFromString(iframeHtml, "text/xml");
+
+			console.log(iframeDom);
+			
+		}
+
+	</script>
+</body>
+</html>
+

@@ -6,7 +6,7 @@ version: '2'
 
 services:
   
-  nginx_static:
+  decode_static:
     restart: always
     container_name: decode_static
     image: nginx
@@ -16,14 +16,31 @@ services:
      - ./nginx.conf:/etc/nginx/conf.d/nginx.conf:ro 
      - ./logs:/var/log/nginx
      #- ./html_test:/html
-     - ./decode/dist:/html
+     - ./decode_pwa/dist:/html
+     - ./proxy-admin-test:/html/proxy-admin
     
-  decode_api:
+  #decode_api:
+  #  restart: always
+  #  container_name: decode_api
+  #  build: ./dockerfiles/bjoern_flask_docker
+  #  ports:
+  #     - "5005:9808"
+  #  volumes:
+  #     - ./decode_server/server:/app
+
+  decode_server:
     restart: always
-    container_name: decode_api
-    build: ./dockerfiles/bjoern_flask_docker
-    # environment:
-    ports:
-       - "5005:9808"
+    container_name: decode_server
     volumes:
-       - ./decode_fieldlab/server:/app
+      - ./decode_server/server:/app
+    build: ./dockerfiles/flask-python3.7
+    ports:
+      - "5005:80"
+    environment:
+      - FLASK_APP=api.py
+      - FLASK_DEBUG=1
+      - 'RUN=flask run --host=0.0.0.0 --port=80'
+    command: flask run --host=0.0.0.0 --port=80
+    # Infinite loop, to keep it alive, for debugging
+    # command: bash -c "while true; do echo 'sleeping...' && sleep 10; done"
+

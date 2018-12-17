@@ -1,0 +1,8 @@
+flask-restplus
+flask-login
+passlib
+simplejson
+flask-cors
+requests
+flask_socketio
+eventlet
