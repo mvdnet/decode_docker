@@ -1,6 +1,6 @@
 from flask import Flask, Response, json, request
 from flask_cors import CORS
-from flask_socketio import SocketIO, join_room, close_room
+from flask_socketio import SocketIO, join_room, close_room, leave_room
 import random
 import logging
 
@@ -37,6 +37,14 @@ def socket_onboarding(data):
 
     logging.info("Room [{0}] joined by client [{1}]".format(session_id, request.sid))
 
+@socketio.on('close_room')
+def socket_cancel(data):
+    session_id = data['session_id']
+    close_room(session_id)
+    logging.info("Client [{0}] closed room [{1}]".format(request.sid, session_id))
+
+    session_manager.end_session(session_id)
+
 
 @app.route('/init_onboarding', methods=['POST'])
 def init_onboarding_request():
@@ -52,11 +60,12 @@ def init_onboarding_request():
     request_type = "onboarding"
     description = "I want to start onboarding session"
 
-    session_id = session_manager.init_session(request_type, description)
+    new_session = session_manager.init_session(request_type, description)
 
-    logging.info("New session was initialized [{}]".format(session_id))
+    logging.info("New session was initialized [{}]".format(new_session['id']))
+    logging.info("NEW SESSION: {}".format(new_session))
 
-    return json_response({'session_id': session_id})
+    return json_response({'session_id': new_session['id']})
 
 
 @app.route("/attach_public_key", methods=['POST'])
@@ -134,10 +143,16 @@ def get_session():
     data = request.get_data()
     data_json = json.loads(data)
     session_id = data_json['session_id']
-
+    
     session = session_manager.get_session(session_id)
+    if session['status'] == "GOT_ENCR_DATA":
+        session = session_manager.change_status(session_id, "FINALIZED")
 
     logging.info("Returning session [{}]".format(session_id))
+    logging.info("RETURN SESSION: {}".format(session))
+
+    print("SESSION BEFORE EMIT STATUS UPDATE", session)
+    socketio.emit('status_update', {'status': session['status']}, room=session['id'])
 
     return json_response({'response': session})
 
@@ -148,10 +163,9 @@ def init_disclosure_request():
     data_json = json.loads(data)
     attribute_request = data_json['attribute_request']
     description = data_json['description']
-
     session_id = session_manager.init_session(attribute_request, description)
 
-    #TODO: logging
+    logging.info("New disclosure session was created [{}]".format(session_id))
 
     return json_response({'session_id': session_id})
 
@@ -167,13 +181,43 @@ def get_session_status():
     return json_response({'response': response})
 
 
-# NOT FUNCTIONAL:
-# @app.route('/accept_request', methods=['POST'])
+@app.route('/accept_request', methods=['POST'])
+def accept_request():
+    data = request.get_data()
+    data_json = json.loads(data)
+    session_id = data_json['session_id']
+    request_response = data_json['request_response']
 
-# NOT FUNCTIONAL:
-# @app.route('/deny_request', methods=['POST'])
+    logging.info("Disclosure request accepted [{}]".format(session_id))
+    status = 'FINALIZED'
 
+    session = None
+    if request_response == "VALID":
+        random_color = "rgb({0},{1},{2})".format(random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
+        session = session_manager.append_session_data(session_id, {'request_status': request_response, 'secret': random_color}, status)
 
+    elif request_response == "INVALID":
+        session = session_manager.append_session_data(session_id, {'request_status': request_response}, status)
+
+    socketio.emit('status_update', {'status': status}, room=session_id)
+    
+    return json_response({'response': session})
+
+@app.route('/deny_request', methods=['POST'])
+def deny_request():
+    data = request.get_data()
+    data_json = json.loads(data)
+    session_id = data_json['session_id']
+
+    logging.info("Disclosure request denied [{}]".format(session_id))
+
+    status = 'FINALIZED'
+    session = session_manager.append_session_data(session_id, {'request_status': 'DENIED'}, status)
+
+    socketio.emit('status_update', {'status': status}, room=session_id)
+
+    return json_response({'response': session})
+    
 @app.route('/get_active_sessions', methods=['GET'])
 def get_active_sessions():
     return json_response(session_manager.active_sessions)
@@ -190,4 +234,6 @@ def json_response(data):
 
 
 if __name__ == '__main__':
-    socketio.run(app, host='0.0.0.0')
+    logging.info("Server started")
+    socketio.run(app, host='0.0.0.0', debug=False)
+    logging.info("Server shutting down")

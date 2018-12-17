@@ -2,31 +2,27 @@ version: '2'
 
 # Decode TMP stack
 # Nginx used only for serving static files
-# Bjoern WSGI server to server python flask
 
 services:
+
+  # PROXY AND STATIC FILE SERVE
   
-  decode_static:
+  decode_static_and_proxy:
     restart: always
     container_name: decode_static
     image: nginx
     ports:
-      - "5000:80"
+      - "80:80"
+      - "443:443"
     volumes:
      - ./nginx.conf:/etc/nginx/conf.d/nginx.conf:ro 
      - ./logs:/var/log/nginx
-     #- ./html_test:/html
      - ./decode_pwa/dist:/html
-     - ./proxy-admin-test:/html/proxy-admin
-    
-  #decode_api:
-  #  restart: always
-  #  container_name: decode_api
-  #  build: ./dockerfiles/bjoern_flask_docker
-  #  ports:
-  #     - "5005:9808"
-  #  volumes:
-  #     - ./decode_server/server:/app
+#     - ./proxy-admin-test:/html/proxy-admin
+     - ./domains:/domains
+     - ./certs:/certs
+
+  #  API FLASK
 
   decode_server:
     restart: always
@@ -38,9 +34,9 @@ services:
       - "5005:80"
     environment:
       - FLASK_APP=api.py
-      - FLASK_DEBUG=1
+      - FLASK_DEBUG=0
       - 'RUN=flask run --host=0.0.0.0 --port=80'
-    command: flask run --host=0.0.0.0 --port=80
+    #command: flask run --host=0.0.0.0 --port=80
     # Infinite loop, to keep it alive, for debugging
     # command: bash -c "while true; do echo 'sleeping...' && sleep 10; done"
 
